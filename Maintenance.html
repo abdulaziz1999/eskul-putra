@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situs Sedang Maintenance</title>
+    <!-- Tailwind CSS -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        /* Gaya Game Sederhana */
+        #game-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 150px;
+            border-bottom: 4px solid #374151; /* Garis tanah */
+            overflow: hidden;
+            margin: 0 auto;
+            background-color: #F3F4F6;
+        }
+
+        #dino {
+            position: absolute;
+            bottom: 0;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: #2563EB;
+            border-radius: 4px;
+        }
+
+        .obstacle {
+            position: absolute;
+            bottom: 0;
+            right: -40px;
+            width: 20px;
+            height: 40px;
+            background-color: #EF4444;
+        }
+
+        .jumping {
+            animation: jump 0.6s ease-out;
+        }
+
+        @keyframes jump {
+            0% { bottom: 0; }
+            40% { bottom: 70px; }
+            100% { bottom: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col items-center justify-center p-6">
+
+    <!-- Container Utama Pesan Maintenance -->
+    <div id="maintenance-view" class="max-w-md w-full text-center bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+        <div class="mb-6 flex justify-center">
+            <!-- Ikon Wrench / Maintenance -->
+            <svg class="w-16 h-16 text-blue-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+        </div>
+        
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Sistem Sedang Maintenance</h1>
+        <p class="text-gray-600 mb-6">Kami sedang melakukan pemeliharaan rutin untuk meningkatkan performa layanan kami. Mohon kembali beberapa saat lagi.</p>
+
+        <!-- Tombol untuk memulai game -->
+        <button onclick="startGame()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 cursor-pointer shadow-md">
+            Mainkan Game Sambil Menunggu! 🦖
+        </button>
+    </div>
+
+    <!-- Container Game -->
+    <div id="game-view" class="hidden max-w-2xl w-full text-center mt-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-sm text-gray-500 font-medium">Tekan SPASI / Klik untuk Melompat</span>
+                <span class="text-lg font-bold text-blue-600">Skor: <span id="score">0</span></span>
+            </div>
+
+            <!-- Area Game -->
+            <div id="game-container">
+                <div id="dino"></div>
+            </div>
+
+            <!-- Tombol Kontrol / Kembali -->
+            <div class="mt-6 flex justify-between gap-4">
+                <button id="action-btn" onclick="jump()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition cursor-pointer">
+                    Lompat ⬆️
+                </button>
+                <button onclick="resetGame()" class="px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 rounded-lg transition cursor-pointer">
+                    Mulai Ulang
+                </button>
+                <button onclick="exitGame()" class="px-4 bg-red-500 hover:bg-red-600 text-white font-medium py-2 rounded-lg transition cursor-pointer">
+                    Kembali
+                </button>
+            </div>
+            
+            <!-- Game Over Notif -->
+            <div id="game-over-text" class="hidden mt-4 text-red-500 font-bold">Game Over! Tekan Mulai Ulang.</div>
+        </div>
+    </div>
+
+    <!-- Logika Game -->
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const dino = document.getElementById('dino');
+        const scoreDisplay = document.getElementById('score');
+        const maintenanceView = document.getElementById('maintenance-view');
+        const gameView = document.getElementById('game-view');
+        const gameOverText = document.getElementById('game-over-text');
+        
+        let isJumping = false;
+        let score = 0;
+        let gameInterval;
+        let obstacleInterval;
+        let isPlaying = false;
+
+        function startGame() {
+            maintenanceView.classList.add('hidden');
+            gameView.classList.remove('hidden');
+            resetGame();
+        }
+
+        function exitGame() {
+            gameView.classList.add('hidden');
+            maintenanceView.classList.remove('hidden');
+            clearInterval(gameInterval);
+            clearInterval(obstacleInterval);
+            isPlaying = false;
+        }
+
+        function resetGame() {
+            clearInterval(gameInterval);
+            clearInterval(obstacleInterval);
+            score = 0;
+            scoreDisplay.innerText = score;
+            gameOverText.classList.add('hidden');
+            isPlaying = true;
+
+            // Hapus rintangan yang ada
+            document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
+
+            // Mulai skor & deteksi tabrakan
+            gameInterval = setInterval(updateGame, 20);
+            
+            // Buat rintangan acak
+            obstacleInterval = setInterval(createObstacle, Math.random() * 1000 + 1000);
+        }
+
+        function jump() {
+            if (!isPlaying) return;
+            if (!isJumping) {
+                isJumping = true;
+                dino.classList.add('jumping');
+                setTimeout(() => {
+                    dino.classList.remove('jumping');
+                    isJumping = false;
+                }, 600);
+            }
+        }
+
+        function createObstacle() {
+            if (!isPlaying) return;
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            gameContainer.appendChild(obstacle);
+
+            let obstaclePosition = 600;
+            let obstacleIntervalTimer = setInterval(() => {
+                if (obstaclePosition < -20) {
+                    clearInterval(obstacleIntervalTimer);
+                    obstacle.remove();
+                    score += 10;
+                    scoreDisplay.innerText = score;
+                } else if (obstaclePosition > 20 && obstaclePosition < 60 && !isJumping) {
+                    // Cek Tabrakan
+                    clearInterval(obstacleIntervalTimer);
+                    gameOverText.classList.remove('hidden');
+                    isPlaying = false;
+                    clearInterval(gameInterval);
+                    clearInterval(obstacleInterval);
+                }
+                obstaclePosition -= 10;
+                obstacle.style.right = (600 - obstaclePosition) + 'px';
+            }, 20);
+        }
+
+        function updateGame() {
+            // Latar belakang bergerak atau fungsi pergerakan ekstra
+        }
+
+        // Event Listener untuk tombol spasi/klik
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space') {
+                event.preventDefault();
+                if (isPlaying) {
+                    jump();
+                } else if (!gameView.classList.contains('hidden')) {
+                    resetGame();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
